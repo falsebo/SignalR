@@ -5,6 +5,7 @@ using System;
 using CmdLine;
 using Microsoft.AspNet.SignalR.Client.Http;
 using Microsoft.AspNet.SignalR.Client.Transports;
+using System.Collections.Generic;
 
 namespace Microsoft.AspNet.SignalR.Crank
 {
@@ -64,6 +65,15 @@ namespace Microsoft.AspNet.SignalR.Crank
 
         [CommandLineParameter(Command = "SignalRInstance", Required = false, Description = "Instance name for SignalR counters on the server. Defaults to using client connection states.")]
         public string SignalRInstance { get; set; }
+
+        [CommandLineParameter(Command = "QueryString", Required = false, Description = "key=value&key=value")]
+        public string QueryString { get; set; }
+
+        [CommandLineParameter(Command = "MessageType", Required = false, Description = "1:single, 2:group 3;receipt", Default = 1)]
+        public int MessageType { get; set; }
+
+        [CommandLineParameter(Command = "ReceiveTarget", Required = false, Description = "groupId or connectionId", Default = "")]
+        public string ReceiveTarget { get; set; }
 
         public string Controller
         {
@@ -147,5 +157,31 @@ namespace Microsoft.AspNet.SignalR.Crank
             }
             return null;
         }
+
+        public Dictionary<string, string> GetQueryString
+        {
+            get
+            {
+                var dic = new Dictionary<string, string>();
+                if (string.IsNullOrWhiteSpace(QueryString))
+                {
+                    return dic;
+                }
+                var keyValues = QueryString.Split('&');
+                foreach (var item in keyValues)
+                {
+                    var keyvalue = item.Split('=');
+                    if (keyvalue.Length == 2 && !string.IsNullOrWhiteSpace(keyvalue[0]))
+                    {
+                        if (!dic.ContainsKey(keyvalue[0]))
+                        {
+                            dic.Add(keyvalue[0], keyvalue[1]);
+                        }
+                    }
+                }
+                return dic;
+            }
+        }
+
     }
 }
