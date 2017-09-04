@@ -21,7 +21,7 @@ namespace Microsoft.AspNet.SignalR.Crank
         private static HubConnection ControllerConnection;
         private static IHubProxy ControllerProxy;
         private static ControllerEvents TestPhase = ControllerEvents.None;
-	    private static IConnectionFactory Factory;
+        private static IConnectionFactory Factory;
 
         public static void Main()
         {
@@ -30,7 +30,7 @@ namespace Microsoft.AspNet.SignalR.Crank
             ThreadPool.SetMinThreads(Arguments.Connections, 2);
             TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
-	        ComposeConnectionFactory();
+            ComposeConnectionFactory();
 
             if (Arguments.IsController)
             {
@@ -40,38 +40,38 @@ namespace Microsoft.AspNet.SignalR.Crank
             Run().Wait();
         }
 
-		private static void ComposeConnectionFactory()
-		{
-			try
-			{
-				using (var catalog = new DirectoryCatalog(AppDomain.CurrentDomain.BaseDirectory))
-				using (var container = new CompositionContainer(catalog))
-				{
-					var export = container.GetExportedValueOrDefault<IConnectionFactory>();
-					if (export != null)
-					{
-						Factory = export;
-						Console.WriteLine("Using {0}", Factory.GetType());
-					}
-				}
-			}
-			catch (ImportCardinalityMismatchException)
-			{
-				Console.WriteLine("More than one IConnectionFactory import was found.");
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine(e);
-			}
+        private static void ComposeConnectionFactory()
+        {
+            try
+            {
+                using (var catalog = new DirectoryCatalog(AppDomain.CurrentDomain.BaseDirectory))
+                using (var container = new CompositionContainer(catalog))
+                {
+                    var export = container.GetExportedValueOrDefault<IConnectionFactory>();
+                    if (export != null)
+                    {
+                        Factory = export;
+                        Console.WriteLine("Using {0}", Factory.GetType());
+                    }
+                }
+            }
+            catch (ImportCardinalityMismatchException)
+            {
+                Console.WriteLine("More than one IConnectionFactory import was found.");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
 
-			if (Factory == null)
-			{
-				Factory = new DefaultConnectionFactory();
-				Console.WriteLine("Using default connection factory...");
-			}
-		}
+            if (Factory == null)
+            {
+                Factory = new DefaultConnectionFactory();
+                Console.WriteLine("Using default connection factory...");
+            }
+        }
 
-	    private static async Task Run()
+        private static async Task Run()
         {
             var remoteController = !Arguments.IsController || (Arguments.NumClients > 1);
 
@@ -203,13 +203,21 @@ namespace Microsoft.AspNet.SignalR.Crank
         {
             var payload = (Arguments.SendBytes == 0) ? String.Empty : new string('a', Arguments.SendBytes);
 
+            var message = new TestMessageData()
+            {
+                MessageId = Guid.NewGuid().ToString(),
+                ClientTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                Content = string.Format("client.ticks:{0}", DateTime.Now.Ticks),
+                MessageType = (TestMessageType)Arguments.MessageType,
+                Target = Arguments.ReceiveTarget
+            };
+
             while (TestPhase == ControllerEvents.Send)
             {
                 if (!String.IsNullOrEmpty(payload))
                 {
                     await Task.WhenAll(Connections.Select(c => c.Send(payload)));
                 }
-
                 await Task.Delay(Arguments.SendInterval);
             }
         }
@@ -277,7 +285,23 @@ namespace Microsoft.AspNet.SignalR.Crank
                     Connections.TryTake(out connection);
                 };
 
+                connection.Received += (data) =>
+                {
+                    var receipt = new TestMessageData()
+                    {
+                        MessageType = TestMessageType.Receipt,
+                        Content = data,
+                        Target = connection.ConnectionId,
+                        ClientTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                        MessageId = Guid.NewGuid().ToString(),
+                        SenderId = connection.ConnectionId
+                    };
+                    connection.Send(Newtonsoft.Json.JsonConvert.SerializeObject(receipt));
+                };
+
                 Connections.Add(connection);
+
+
             }
             catch (Exception e)
             {
@@ -287,7 +311,34 @@ namespace Microsoft.AspNet.SignalR.Crank
 
         private static Connection CreateConnection()
         {
-	        return Factory.CreateConnection(Arguments.Url);
+            return Factory.CreateConnection(Arguments.Url, Arguments.GetQueryString);
         }
+    }
+
+    public enum TestMessageType
+    {
+        Single = 1,
+        Group = 2,
+        Receipt = 3
+    }
+    [Serializable]
+    public class TestMessageData
+    {
+        public TestMessageType MessageType { get; set; }
+
+        //messageId: messageType: clientTime: serverTime: serverTicks senderId:,target:
+        public string Target { get; set; }
+
+        public string MessageId { get; set; }
+
+        public string SenderId { get; set; }
+
+        public string ClientTime { get; set; }
+
+        public string ServerTime { get; set; }
+
+        public long ServerTicks { get; set; }
+
+        public string Content { get; set; }
     }
 }

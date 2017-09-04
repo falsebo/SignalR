@@ -12,8 +12,10 @@ using Microsoft.AspNet.SignalR.Client;
 
 namespace Microsoft.AspNet.SignalR.Crank
 {
-	public interface IConnectionFactory
-	{
-		Connection CreateConnection(string url);
-	}
+    public interface IConnectionFactory
+    {
+        Connection CreateConnection(string url);
+        Connection CreateConnection(string url, string queryString);
+        Connection CreateConnection(string url, IDictionary<string, string> queryString);
+    }
 }
