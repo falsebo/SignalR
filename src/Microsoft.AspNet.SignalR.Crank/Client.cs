@@ -203,23 +203,37 @@ namespace Microsoft.AspNet.SignalR.Crank
         {
             var payload = (Arguments.SendBytes == 0) ? String.Empty : new string('a', Arguments.SendBytes);
 
-            var message = new TestMessageData()
-            {
-                MessageId = Guid.NewGuid().ToString(),
-                ClientTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
-                Content = string.Format("client.ticks:{0}", DateTime.Now.Ticks),
-                MessageType = (TestMessageType)Arguments.MessageType,
-                Target = Arguments.ReceiveTarget
-            };
-
+            
+//            payload = Newtonsoft.Json.JsonConvert.SerializeObject(message);
             while (TestPhase == ControllerEvents.Send)
             {
-                if (!String.IsNullOrEmpty(payload))
+                foreach(var item in Connections)
                 {
-                    await Task.WhenAll(Connections.Select(c => c.Send(payload)));
+                    SendMessage(item);
                 }
-                await Task.Delay(Arguments.SendInterval);
+                //await Task.WhenAll(Connections.Select(c => c.Send(message)));
             }
+            await Task.Delay(0);
+        }
+
+        static void SendMessage(Connection c)
+        {
+            Task.Run(() =>
+            {
+                var message = new TestMessageData()
+                {
+                    MessageId = Guid.NewGuid().ToString(),
+                    ClientTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                    Contnt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                    MessageType = (TestMessageType)Arguments.MessageType,
+                    Target = Arguments.ReceiveTarget
+                };
+                if (c.State == ConnectionState.Connected)
+                {
+                    c.Send(message);
+                }
+            });
+            
         }
 
         private static void RunDisconnect()
@@ -287,16 +301,12 @@ namespace Microsoft.AspNet.SignalR.Crank
 
                 connection.Received += (data) =>
                 {
-                    var receipt = new TestMessageData()
+                    if (Arguments.Receipt)
                     {
-                        MessageType = TestMessageType.Receipt,
-                        Content = data,
-                        Target = connection.ConnectionId,
-                        ClientTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
-                        MessageId = Guid.NewGuid().ToString(),
-                        SenderId = connection.ConnectionId
-                    };
-                    connection.Send(Newtonsoft.Json.JsonConvert.SerializeObject(receipt));
+                        var receipt = Newtonsoft.Json.JsonConvert.DeserializeObject<TestMessageData>(data);
+                        receipt.MessageType = TestMessageType.Receipt;
+                        connection.Send(receipt);
+                    }
                 };
 
                 Connections.Add(connection);
@@ -337,8 +347,6 @@ namespace Microsoft.AspNet.SignalR.Crank
 
         public string ServerTime { get; set; }
 
-        public long ServerTicks { get; set; }
-
-        public string Content { get; set; }
+        public string Contnt { get; set; }
     }
 }
