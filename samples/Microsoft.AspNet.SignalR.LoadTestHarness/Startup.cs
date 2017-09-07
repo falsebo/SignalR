@@ -7,7 +7,7 @@ using Microsoft.Owin;
 using Owin;
 using System.Configuration;
 using Microsoft.AspNet.SignalR;
-
+using Microsoft.AspNet.SignalR.Redis;
 [assembly: OwinStartup(typeof(Startup))]
 
 namespace Microsoft.AspNet.SignalR.LoadTestHarness
@@ -18,12 +18,12 @@ namespace Microsoft.AspNet.SignalR.LoadTestHarness
         {
             GlobalHost.Configuration.DisconnectTimeout = TimeSpan.FromSeconds(60);
 
-            //var connectionString = ConfigurationManager.AppSettings.Get("redis:connectionString");
-            //var eventKey = ConfigurationManager.AppSettings.Get("redis:eventKey");
-            //if (!string.IsNullOrWhiteSpace(connectionString))
-            //{
-            //    GlobalHost.DependencyResolver.UseRedis(new RedisScaleoutConfiguration(connectionString, eventKey));
-            //}
+            var connectionString = ConfigurationManager.AppSettings.Get("redis:connectionString");
+            var eventKey = ConfigurationManager.AppSettings.Get("redis:eventKey");
+            if (!string.IsNullOrWhiteSpace(connectionString))
+            {
+                GlobalHost.DependencyResolver.UseRedis(new RedisScaleoutConfiguration(connectionString, eventKey));
+            }
 
             app.MapSignalR<TestConnection>("/TestConnection");
             app.MapSignalR();

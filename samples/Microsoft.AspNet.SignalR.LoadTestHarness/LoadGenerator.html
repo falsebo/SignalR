@@ -53,8 +53,10 @@
                 $go = $("#go"),
                 payload = "01234567890123456789012345678901", // 32 chars
                 interval = null;
-            var testMessage = {
-                MessageType: 1,
+
+
+            var settingMessage = {
+                MessageType: 4,
                 MessageContent: "",
                 Target: ""
             };
@@ -67,10 +69,10 @@
                     console.log(res);
                     connection.send({
                         MessageType: 3,
-                        Content: res,
+                        Contnt: "",
                         Target: $("#target").val() || "",
-                        ClientTime: res,
-                        MessageId: res,
+                        ClientTime: res.ClientTime,
+                        MessageId: res.MessageId
                     })
                 });
             }
@@ -89,12 +91,17 @@
                     $interval.prop("disabled", true);
                     $go.val("Stop");
 
+                    connection.send({
+                        MessageType: 4,
+                        Target: $("#target").val() || ""
+                    });
+
                     interval = window.setInterval(function () {
                         var t = new Date();
                         var content = t.getFullYear() + "-" + (t.getMonth() + 1) + "-" + t.getDate() + " " + t.getHours() + ":" + t.getMinutes() + ":" + t.getSeconds() + "." + t.getMilliseconds();
                         connection.send({
                             MessageType: $("#messagetype").val() || 1,
-                            Content: content,
+                            Contnt: content,
                             Target: $("#target").val() || "",
                             ClientTime: content,
                             MessageId: content,

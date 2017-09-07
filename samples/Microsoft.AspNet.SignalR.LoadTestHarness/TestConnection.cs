@@ -18,6 +18,7 @@ namespace Microsoft.AspNet.SignalR.LoadTestHarness
         private long t = 0;
         private static object _syncObject = new object();
         private static bool start = false;
+        private static string target = "";
         public TestConnection()
         {
             t = DateTime.Now.Ticks;
@@ -49,19 +50,21 @@ namespace Microsoft.AspNet.SignalR.LoadTestHarness
                 var now = DateTime.Now;
                 model.SenderId = connectionId;
                 model.ServerTime = now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-                model.ServerTicks = now.Ticks;
                 model.MessageId = string.IsNullOrWhiteSpace(model.MessageId) ? Guid.NewGuid().ToString() : model.MessageId;
                 switch (model.MessageType)
                 {
                     case TestMessageType.Group:
-                        base.Groups.Send(model.Target, model, connectionId);
+                        base.Groups.Send(target, model, connectionId);
                         break;
                     case TestMessageType.Single:
-                        Connection.Send(string.IsNullOrWhiteSpace(model.Target) ? model.Target : model.Target, JsonConvert.SerializeObject(model));
+                        Connection.Send(string.IsNullOrWhiteSpace(target) ? connectionId : target, model);
                         break;
                     case TestMessageType.Receipt://回执
                         //接收到客户端回执情况记录到内存中
                         _sendTask.Enqueue(JsonConvert.SerializeObject(model));
+                        break;
+                    case TestMessageType.Setting:
+                        target = model.Target;
                         break;
                 }
             }
@@ -106,6 +109,7 @@ namespace Microsoft.AspNet.SignalR.LoadTestHarness
                                 break;
                             }
                         }
+                        Thread.Sleep(1000);
                         if (sb.Length > 0)
                         {
                             WriteFile(string.Format("{0}\r\n", sb.ToString()));
@@ -122,8 +126,8 @@ namespace Microsoft.AspNet.SignalR.LoadTestHarness
                 }
             }
         }
-        int fileLength = 0;
-        int fileIndex = 0;
+        static int fileLength = 0;
+        static int fileIndex = 0;
         const int tenMb = 10485760;
         void WriteFile(string data)
         {
@@ -134,7 +138,7 @@ namespace Microsoft.AspNet.SignalR.LoadTestHarness
                     ++fileIndex;
                     fileLength = 0;
                 }
-                using (var file = new FileStream(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, string.Format("log_{0}_{1}.log", t, fileIndex)), FileMode.Append, FileAccess.Write))
+                using (var file = new FileStream(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"logs", string.Format("log_{0}_{1}.log", t, fileIndex)), FileMode.Append, FileAccess.Write))
                 {
                     var bytes = Encoding.Default.GetBytes(data);
                     fileLength += bytes.Length;
@@ -152,11 +156,13 @@ namespace Microsoft.AspNet.SignalR.LoadTestHarness
         Broadcast
     }
 
+
     public enum TestMessageType
     {
         Single = 1,
         Group = 2,
-        Receipt = 3
+        Receipt = 3,
+        Setting = 4
     }
     [Serializable]
     public class TestMessageData
@@ -171,9 +177,7 @@ namespace Microsoft.AspNet.SignalR.LoadTestHarness
 
         public string ServerTime { get; set; }
 
-        public long ServerTicks { get; set; }
-
-        public string Content { get; set; }
+        public string Contnt { get; set; }
 
         public string Target { get; set; }
     }
