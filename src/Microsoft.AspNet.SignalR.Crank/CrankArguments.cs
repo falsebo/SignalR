@@ -75,8 +75,8 @@ namespace Microsoft.AspNet.SignalR.Crank
         [CommandLineParameter(Command = "ReceiveTarget", Required = false, Description = "groupId or connectionId", Default = "")]
         public string ReceiveTarget { get; set; }
 
-        [CommandLineParameter(Command = "Receipt", Required = false, Description = "groupId or connectionId", Default = false)]
-        public bool Receipt { get; set; }
+        [CommandLineParameter(Command = "Receipt", Required = false, Description = "groupId or connectionId", Default = 0)]
+        public int Receipt { get; set; }
         public string Controller
         {
             get

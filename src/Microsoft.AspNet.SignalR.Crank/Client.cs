@@ -301,11 +301,14 @@ namespace Microsoft.AspNet.SignalR.Crank
 
                 connection.Received += (data) =>
                 {
-                    if (Arguments.Receipt)
+                    if (Arguments.Receipt>0)
                     {
                         var receipt = Newtonsoft.Json.JsonConvert.DeserializeObject<TestMessageData>(data);
                         receipt.MessageType = TestMessageType.Receipt;
-                        connection.Send(receipt);
+                        if (connection.State == ConnectionState.Connected)
+                        {
+                            connection.Send(receipt);
+                        }
                     }
                 };
 
