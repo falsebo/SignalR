@@ -39,6 +39,7 @@
         </select>
         <label for="">groupId/connectionId</label><input id="target" />
         <input id="go" type="button" value="Go" />
+        <input id="set" type="button" value="SET" />
     </div>
 
     <script src="Scripts/jquery-1.8.2.js"></script>
@@ -91,10 +92,6 @@
                     $interval.prop("disabled", true);
                     $go.val("Stop");
 
-                    connection.send({
-                        MessageType: 4,
-                        Target: $("#target").val() || ""
-                    });
 
                     interval = window.setInterval(function () {
                         var t = new Date();
@@ -132,6 +129,13 @@
                 } else {
                     go();
                 }
+            });
+
+            $("#set").click(function () {
+                connection.send({
+                    MessageType: 4,
+                    Target: $("#target").val() || ""
+                });
             });
 
             connection.stateChanged(function (change) {
