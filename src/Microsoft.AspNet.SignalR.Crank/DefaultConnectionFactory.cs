@@ -16,7 +16,12 @@ namespace Microsoft.AspNet.SignalR.Crank
         {
             return new Connection(url);
         }
-
+        /// <summary>
+        /// CreateConnection
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="queryString"></param>
+        /// <returns></returns>
         public Connection CreateConnection(string url, string queryString)
         {
             return new Connection(url, queryString);
