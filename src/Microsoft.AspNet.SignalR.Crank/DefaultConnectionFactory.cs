@@ -10,11 +10,21 @@ using Microsoft.AspNet.SignalR.Client;
 
 namespace Microsoft.AspNet.SignalR.Crank
 {
-	class DefaultConnectionFactory : IConnectionFactory
-	{
-		public Connection CreateConnection(string url)
-		{
-			return new Connection(url);
-		}
-	}
+    class DefaultConnectionFactory : IConnectionFactory
+    {
+        public Connection CreateConnection(string url)
+        {
+            return new Connection(url);
+        }
+
+        public Connection CreateConnection(string url, string queryString)
+        {
+            return new Connection(url, queryString);
+        }
+
+        public Connection CreateConnection(string url, IDictionary<string, string> queryString)
+        {
+            return new Connection(url, queryString);
+        }
+    }
 }
